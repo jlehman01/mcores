@@ -232,7 +232,10 @@ summary {
 <li>Water Transportation</li>
 </ul></li>
 <li><p><a href="https://www.fdot.gov/statistics/gis/">FDOT Roadway Characteristics</a> (Principal Arterial-Interstate &amp; Principal Arterial-Expressway only)</p></li>
-<li><p><a href="https://geodata.dep.state.fl.us/datasets/2f0e5f9a180a412fbd77dc5628f28de3_3">Florida Statewide Land Use Land Cover</a> (to identify land area)</p></li>
+<li><p><a href="https://geodata.dep.state.fl.us/datasets/2f0e5f9a180a412fbd77dc5628f28de3_3">Florida Statewide Land Use Land Cover</a> (to identify land area)</p>
+<ul>
+<li>Note that some analyses may report a higher number of land acres in Florida. This analysis excludes all water, including lakes, rivers, etc… (but not areas designated as wetlands). As it is based on the FL land cover dataset, this estimate should be a more accurate measures of land area.</li>
+</ul></li>
 </ul>
 <pre class="r"><code>epsg &lt;- 3087  #NAD83(HARN) / Florida GDL Albers Meters
 
@@ -278,14 +281,20 @@ points &lt;- st_read(&quot;K:\\Projects\\MCORES\\Features\\LU\\ELU\\MCORES_filte
 land &lt;- readRDS(&#39;K:\\Projects\\Florida\\Features\\LU\\StateWideLU_FDEP\\StatewideLandOnly.Rds&#39;) %&gt;% 
   st_transform(epsg) %&gt;% 
   ms_simplify() %&gt;% 
-  st_make_valid()</code></pre>
-<pre class="r"><code>points_with_buffers &lt;- st_join(points, roads_buffer_1) %&gt;% 
+  st_make_valid()
+
+#intersect points with buffers
+
+points_with_buffers &lt;- st_join(points, roads_buffer_1) %&gt;% 
   st_join(roads_buffer_2_5) %&gt;% 
   st_join(roads_buffer_5) %&gt;% 
   mutate(expressway_1 = replace_na(expressway_1, 0),
          expressway_25 = replace_na(expressway_25, 0),
-         expressway_5 = replace_na(expressway_5, 0))</code></pre>
-<pre class="r"><code>land_area &lt;- land %&gt;% 
+         expressway_5 = replace_na(expressway_5, 0))
+
+#calculate land area
+
+land_area &lt;- land %&gt;% 
   mutate(acres_florida_land = as.numeric(st_area(.))/4047) %&gt;% 
   st_drop_geometry() %&gt;% 
   select(acres_florida_land)
@@ -309,8 +318,11 @@ roads_buffer_5_intersect &lt;- st_intersection(land, roads_buffer_5) %&gt;%
   st_drop_geometry() %&gt;% 
   select(acres_5mile) %&gt;% 
   cbind(land_area) %&gt;% 
-  mutate(percent = paste0(round((acres_5mile/land_area)*100,2),&quot;%&quot;))</code></pre>
-<pre class="r"><code>#st_write(points_with_buffers, &quot;K:\\Projects\\MCORES\\Features\\LU\\ELU\\MCORES_filtered\\mcores_cluster_points_buffer_analysis.shp&quot;, quiet = TRUE)</code></pre>
+  mutate(percent = paste0(round((acres_5mile/land_area)*100,2),&quot;%&quot;))
+
+#export data
+
+#st_write(points_with_buffers, &quot;K:\\Projects\\MCORES\\Features\\LU\\ELU\\MCORES_filtered\\mcores_cluster_points_buffer_analysis.shp&quot;, quiet = TRUE)</code></pre>
 </div>
 <div id="map-of-inputs" class="section level3">
 <h3>Map of Inputs</h3>
